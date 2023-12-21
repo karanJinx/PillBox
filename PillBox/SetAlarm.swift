@@ -32,7 +32,7 @@ class SetAlarmVC: UIViewController {
     @objc func saveButtonPressedToSaveAlarm() {
         guard let selectedDate = datePicker?.date else {return}
         let dateFormat = DateFormatter()
-        dateFormat.dateFormat = "hh:mm a"
+        dateFormat.dateFormat = "HH:mm a"
         let dateString = dateFormat.string(from: selectedDate)
         
         if datePickerDelegate != nil {

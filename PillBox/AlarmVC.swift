@@ -7,14 +7,22 @@
 
 import Foundation
 import UIKit
+import CoreBluetooth
 
 protocol ValueToSend {
-    func value(time: String)
+    func value(time: String, alarmNumber: Int)
+    func alarmSwitchDidChange(isEnabled: Bool, tag: Int)
 }
 
 class AlarmVC: UIViewController,DatePickerDelegate {
     
-    var time1: String? = ""
+    let bluetoothVC = BluetoothVC()
+    
+    var time1: String?
+    
+    var dateLable1Time = ""
+    var dateLable2Time = ""
+    
     
     var delegate: ValueToSend?
     
@@ -36,12 +44,46 @@ class AlarmVC: UIViewController,DatePickerDelegate {
     @IBOutlet var date7Lable: UILabel!
     @IBOutlet var date8Lable: UILabel!
     @IBOutlet var date9Lable: UILabel!
+    @IBOutlet var alarmSwitch1: UISwitch!
+    @IBOutlet var alarmSwitch2: UISwitch!
+    @IBOutlet var alarmSwitch3: UISwitch!
     
-
+    
+    var dynamicAletTag: Int = 0
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        if dynamicAletTag == 1 {
+            date1Lable.text = dateLable1Time
+        }
+        if dynamicAletTag == 2 {
+            date2Lable.text = dateLable1Time
+        }
+        if dynamicAletTag == 3 {
+            date3Lable.text = dateLable1Time
+        }
+        if dynamicAletTag == 4 {
+            date4Lable.text = dateLable1Time
+        }
+        if dynamicAletTag == 5 {
+            date5Lable.text = dateLable1Time
+        }
+        if dynamicAletTag == 6 {
+            date6Lable.text = dateLable1Time
+        }
+        if dynamicAletTag == 7 {
+            date7Lable.text = dateLable1Time
+        }
+        if dynamicAletTag == 8 {
+            date8Lable.text = dateLable1Time
+        }
+        if dynamicAletTag == 9 {
+            date9Lable.text = dateLable1Time
+        }
+
         setUpGesture()
+        alarmSwitch1.isOn = false
+        alarmSwitch2.isOn = false
     }
     func setUpGesture() {
         if let alarm1View = alarm1View {
@@ -115,6 +157,7 @@ class AlarmVC: UIViewController,DatePickerDelegate {
         let vc = storyBoard.instantiateViewController(withIdentifier: "SetAlarmVC") as! SetAlarmVC
         vc.datePickerDelegate = self
         vc.selectedTag = viewTag
+        dynamicAletTag = viewTag
         navigationController?.pushViewController(vc, animated: true)
     }
 
@@ -122,8 +165,21 @@ class AlarmVC: UIViewController,DatePickerDelegate {
         navigationController?.popToViewController((self.navigationController?.viewControllers[0]) as! BluetoothVC, animated: true)
     }
     @IBAction func saveButtonPressed(_ sender: Any) {
-        delegate?.value(time: time1 ?? "")
+        delegate?.value(time: time1 ?? "", alarmNumber: dynamicAletTag)
         navigationController?.popViewController(animated: true)
+    }
+    @IBAction func switchAction1(_ sender: UISwitch) {
+        handleSwitchChange(sender: sender, viewNumber: dynamicAletTag)
+    }
+    @IBAction func switchAction2(_ sender: UISwitch) {
+        handleSwitchChange(sender: sender, viewNumber: dynamicAletTag)
+    }
+    @IBAction func switchAction3(_ sender: UISwitch) {
+        handleSwitchChange(sender: sender, viewNumber: dynamicAletTag)
+    }
+    func handleSwitchChange(sender: UISwitch, viewNumber: Int) {
+        let isEnabled = sender.isOn
+        delegate?.alarmSwitchDidChange(isEnabled: isEnabled, tag: viewNumber)
     }
 }
 
@@ -132,30 +188,31 @@ extension AlarmVC {
         if viewTag == 1 {
             date1Lable.text = date
             time1 = date
+//            print("time1", time1)
         } else if viewTag == 2 {
             date2Lable.text = date
-//            time1 = date
+            time1 = date
         } else if viewTag == 3 {
             date3Lable.text = date
-//            time1 = date
+            time1 = date
         } else if viewTag == 4 {
             date4Lable.text = date
-//            time1 = date
+            time1 = date
         } else if viewTag == 5 {
             date5Lable.text = date
-//            time1 = date
+            time1 = date
         } else if viewTag == 6 {
             date6Lable.text = date
-//            time1 = date
+            time1 = date
         } else if viewTag == 7 {
             date7Lable.text = date
-//            time1 = date
+            time1 = date
         } else if viewTag == 8 {
             date8Lable.text = date
-//            time1 = date
+            time1 = date
         } else if viewTag == 9 {
             date9Lable.text = date
-//            time1 = date
+            time1 = date
         }
     }
 }

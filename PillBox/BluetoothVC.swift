@@ -10,7 +10,13 @@ import UIKit
 
 
 class BluetoothVC: UIViewController, ValueToSend {
-    var firstTime: String =  ""
+    
+    
+
+    
+    var firstTime: String?
+    var dynamicTag: Int?
+    
     var centralManager: CBCentralManager!
     var myPeripheral: CBPeripheral!
     
@@ -46,6 +52,8 @@ class BluetoothVC: UIViewController, ValueToSend {
         let storyBoard = UIStoryboard(name: "Main", bundle: nil)
         let vc = storyBoard.instantiateViewController(identifier: "AlarmVC") as! AlarmVC
         vc.delegate = self
+        vc.dateLable1Time = firstTime ?? "--:--"
+        vc.dynamicAletTag = dynamicTag ?? 0
         self.navigationController?.pushViewController(vc, animated: true)
     }
     
@@ -100,13 +108,13 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
                 if let byte = UInt8(finalCrc ?? "", radix: 16) {
                     let byteArray = [byte]
                     let commandWithCRC = commandWithoutCrc + byteArray
-                    print("command with crc", Conversions.getPairsFromHexString(data: commandWithCRC))
+                    //print("command with crc", Conversions.getPairsFromHexString(data: commandWithCRC))
                     macAddress = commandWithCRC
                 }
             }
         }
         if let name = peripheral.name {
-            if name.contains("PD_6C67") { //"PD_6BCC"
+            if name.contains("PD_") { //"PD_6BCC"
                 centralManager.stopScan()
                 self.myPeripheral = peripheral
                 self.myPeripheral.delegate = self
@@ -131,7 +139,6 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
             else {
                 print("Other services found")
             }
-            
         }
     }
     
@@ -191,19 +198,30 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
             print("time write completed on pillbox")
         }
     }
-    func writeAlarmCommand(peripheral: CBPeripheral, characteristic: CBCharacteristic, time: String) {
-
+    func writeAlarmCommand(peripheral: CBPeripheral, characteristic: CBCharacteristic, time: String, alaramTag: Int) {
+        
         let firstPart = time.prefix(2)
         if time.count >= 5 {
             let startIndex = time.index(time.startIndex, offsetBy: 3)
             let endIndex = time.index(time.startIndex, offsetBy: 4)
             let seperatedTimeString = time[startIndex...endIndex]
-//            print("FirtstPart",(UInt8(firstPart,radix: 16)))
-//            print("SecondPart",(UInt8(seperatedTimeString,radix: 16)))
-            
             let firstPartHex = String(Int(firstPart) ?? 0, radix: 16)
             let SecondPartHex = String(Int(seperatedTimeString) ?? 0,radix: 16)
-            let commandWithoutCRC: [UInt8] = [0xBB, 0x11, 0x0A, 0xCE, 0x08, 0x00, 0x06, 0x61, 0x01, UInt8(firstPartHex,radix: 16)!, 0x71, 0x01, UInt8(SecondPartHex, radix: 16)!]
+            
+            let constantTagForHour: UInt8 = 0x60
+            let alarmHourTag: Int = Int(constantTagForHour) + alaramTag
+            print("AlarmHourTag", alarmHourTag)
+            let hourString: String = String(alarmHourTag,radix: 16)
+            let hourStr = hourString
+            print(hourStr)
+            let hourByte = UInt8(hourStr,radix: 16)
+            
+            let constantTagForMin: UInt8 = 0x70
+            let alarmMinTag: Int = Int(constantTagForMin) + alaramTag
+            let minByte = UInt8(String(alarmMinTag,radix: 16), radix: 16)
+
+
+            let commandWithoutCRC: [UInt8] = [0xBB, 0x11, 0x0A, 0x4F, 0x08, 0x00, 0x06, hourByte!, 0x01, UInt8(firstPartHex,radix: 16)!, minByte!, 0x01, UInt8(SecondPartHex, radix: 16)!]
             let checksum = Conversions.calculateChecksum(for: Conversions.getPairsFromHexString(data: commandWithoutCRC) ?? []) ?? ""
             if let byte = UInt8(checksum, radix: 16) {
                 let byteArrayChecksum: [UInt8] = [byte]
@@ -213,12 +231,45 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
             }
         }
     }
-    func alarmSwitch(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
-        let command: [UInt8] = [0xBB, 0x11, 0x07, 0xCE, 0x08, 0x00, 0x06, 0x81, 0x01, 0x01, 0x32]
-        
-        let data = Data(command)
-        peripheral.writeValue(data, for: characteristic, type: .withResponse)
+//    func writealarmSwitch(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+//        let command: [UInt8] = [0xBB, 0x11, 0x07, 0xCE, 0x08, 0x00, 0x06, 0x81, 0x01, 0x01, 0x32]
+//        peripheral.writeValue(Data(command), for: write_characteristics, type: .withResponse)
+//    }
+    
+//    func writealarmSwitch(peripheral: CBPeripheral, characteristic: CBCharacteristic, switchTag: Int) {
+//        let constantSwitchTag: UInt8 = 0x80
+//        let alarmSwitchTag = Int(constantSwitchTag) + switchTag
+//        let SwitchTagByte = UInt8(String(alarmSwitchTag,radix: 16),radix: 16)
+//        let commandWithoutCrc: [UInt8] = [0xBB, 0x11, 0x07, 0xCE, 0x08, 0x00, 0x06, SwitchTagByte!, 0x01, 0x01]
+//        let CRC = Conversions.calculateChecksum(for: Conversions.getPairsFromHexString(data: commandWithoutCrc) ?? []) ?? ""
+//        if let byte = UInt8(CRC, radix: 16) {
+//            let byteArrayCrc: [UInt8] = [byte]
+//            let commandWithCRC = commandWithoutCrc + byteArrayCrc
+//            let data = Data(commandWithCRC)
+//            peripheral.writeValue(data, for: characteristic, type: .withResponse)
+//        }
+//    }
+
+    func writealarmSwitch(peripheral: CBPeripheral, characteristic: CBCharacteristic, switchTag: Int, isSwitchOn: Bool) {
+        let constantSwitchTag: UInt8 = 0x80
+        let alarmSwitchTag = Int(constantSwitchTag) + switchTag
+        let switchTagByte = UInt8(String(alarmSwitchTag, radix: 16), radix: 16)
+
+        // Use isSwitchOn to determine the value of the last byte
+        let lastByteValue: UInt8 = isSwitchOn ? 0x01 : 0x00
+
+        let commandWithoutCrc: [UInt8] = [0xBB, 0x11, 0x07, 0xCE, 0x08, 0x00, 0x06, switchTagByte!, 0x01, lastByteValue]
+
+        let CRC = Conversions.calculateChecksum(for: Conversions.getPairsFromHexString(data: commandWithoutCrc) ?? []) ?? ""
+
+        if let byte = UInt8(CRC, radix: 16) {
+            let byteArrayCrc: [UInt8] = [byte]
+            let commandWithCRC = commandWithoutCrc + byteArrayCrc
+            let data = Data(commandWithCRC)
+            peripheral.writeValue(data, for: characteristic, type: .withResponse)
+        }
     }
+
     
     
     func commonWriteCommand(peripheral: CBPeripheral) {
@@ -228,7 +279,6 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
                 self.writeConnectionCommand(peripheral: peripheral, characteristics: self.write_characteristics)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self.writeDateTime(peripheral: peripheral)
-
                 }
             }
         }
@@ -283,18 +333,84 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
             print("Successfully wrote value for characteristic \(characteristic.uuid)")
         }
     }
-
-
 }
 
 extension BluetoothVC {
-    func value(time: String) {
-        print("the time", time)
 
-            writeAlarmCommand(peripheral: myPeripheral, characteristic: write_characteristics, time: time)
-            alarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics)
+    func value(time: String, alarmNumber: Int) {
+        
+        dynamicTag = alarmNumber
+        print(alarmNumber)
+        print(time)
+        if dynamicTag == 1 {
+            firstTime = time
+//            print("FirstTime",firstTime)
+        }
+        if dynamicTag == 2 {
+            firstTime = time
+        }
+        if dynamicTag == 3 {
+            firstTime = time
+        }
+        if dynamicTag == 4 {
+            firstTime = time
+        }
+        if dynamicTag == 5 {
+            firstTime = time
+        }
+        if dynamicTag == 6 {
+            firstTime = time
+        }
+        if dynamicTag == 7 {
+            firstTime = time
+        }
+        if dynamicTag == 8 {
+            firstTime = time
+        }
+        if dynamicTag == 9 {
+            firstTime = time
+        }
+        writeAlarmCommand(peripheral: myPeripheral, characteristic: write_characteristics, time: time, alaramTag: alarmNumber)
+//        writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: alarmNumber)
+//        writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics)
+    }
+    
+    func alarmSwitchDidChange(isEnabled: Bool,tag: Int) {
+//        if tag == 1 {
+//            if isEnabled {
+//                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+//            } else {
+//                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+//            }
+//        }
+//        else if tag == 2 {
+//            if isEnabled {
+//                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+//            } else {
+//                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+//            }
+//        }
+        switch tag {
+        case 1:
+            if isEnabled {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+            } else {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+            }
+        case 2:
+            if isEnabled {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+            } else {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+            }
+
+        default:
+            fatalError("Unknown switch")
+        }
         
     }
+
+    
 }
 
 

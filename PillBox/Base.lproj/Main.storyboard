@@ -281,6 +281,9 @@
                                                     <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xah-KG-ciF">
                                                         <rect key="frame" x="320" y="50" width="49" height="31"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                        <connections>
+                                                            <action selector="switchAction1:" destination="PrY-B5-8ba" eventType="valueChanged" id="hY7-Fw-nJz"/>
+                                                        </connections>
                                                     </switch>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Remarks" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="WNQ-8r-jGa">
                                                         <rect key="frame" x="8" y="106" width="355" height="22"/>
@@ -326,6 +329,9 @@
                                                     <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="LV1-xA-Pu9">
                                                         <rect key="frame" x="320" y="50" width="49" height="31"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                        <connections>
+                                                            <action selector="switchAction2:" destination="PrY-B5-8ba" eventType="valueChanged" id="ajP-j8-Jy7"/>
+                                                        </connections>
                                                     </switch>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Remarks" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="068-1x-cJN">
                                                         <rect key="frame" x="8" y="106" width="355" height="22"/>
@@ -372,6 +378,9 @@
                                                     <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sSc-8R-7JS">
                                                         <rect key="frame" x="320" y="50" width="49" height="31"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                        <connections>
+                                                            <action selector="switchAction3:" destination="PrY-B5-8ba" eventType="valueChanged" id="BWO-dH-VqD"/>
+                                                        </connections>
                                                     </switch>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Remarks" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="De1-vS-9RC">
                                                         <rect key="frame" x="8" y="106" width="355" height="22"/>
@@ -728,7 +737,7 @@
                     </navigationItem>
                     <size key="freeformSize" width="393" height="1800"/>
                     <connections>
-                        <outlet property="alarm1View" destination="ZJX-3a-iVs" id="Ofb-ew-XdV"/>
+                        <outlet property="alarm1View" destination="ZJX-3a-iVs" id="fhW-4X-AyQ"/>
                         <outlet property="alarm2View" destination="lBW-8l-Uhg" id="a66-Ls-5vX"/>
                         <outlet property="alarm3View" destination="Sha-r9-igs" id="8QC-s6-Ky4"/>
                         <outlet property="alarm4View" destination="uLZ-ms-Hub" id="d6I-7Q-318"/>
@@ -737,6 +746,9 @@
                         <outlet property="alarm7View" destination="8j6-5E-xjd" id="YwW-uZ-Bfl"/>
                         <outlet property="alarm8View" destination="Gha-C6-yI2" id="EAY-cI-cYe"/>
                         <outlet property="alarm9View" destination="38W-Em-5yL" id="2EG-kI-yCf"/>
+                        <outlet property="alarmSwitch1" destination="Xah-KG-ciF" id="btX-y7-zrQ"/>
+                        <outlet property="alarmSwitch2" destination="LV1-xA-Pu9" id="a1n-Qc-0VT"/>
+                        <outlet property="alarmSwitch3" destination="sSc-8R-7JS" id="vJG-S5-CEO"/>
                         <outlet property="date1Lable" destination="gjf-AR-qxH" id="Hho-cr-XZu"/>
                         <outlet property="date2Lable" destination="DVX-l9-hxT" id="sOc-ki-OCl"/>
                         <outlet property="date3Lable" destination="Y0d-oe-wft" id="GZr-53-w1j"/>
@@ -751,7 +763,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Dyx-O3-mCl" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="4836" y="-27"/>
+            <point key="canvasLocation" x="4835.8778625954201" y="-27.464788732394368"/>
         </scene>
         <!--Set Alarm-->
         <scene sceneID="Z6h-Hh-DVg">
@@ -853,10 +865,10 @@
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemGreenColor">
-            <color red="0.20392156862745098" green="0.7803921568627451" blue="0.34901960784313724" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.20392156859999999" green="0.78039215689999997" blue="0.34901960780000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="tertiarySystemGroupedBackgroundColor">
-            <color red="0.94901960784313721" green="0.94901960784313721" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>
