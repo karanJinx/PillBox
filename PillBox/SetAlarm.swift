@@ -16,6 +16,8 @@ class SetAlarmVC: UIViewController {
     @IBOutlet var datePicker: UIDatePicker!
     @IBOutlet var remarksTextField: UITextField!
     
+//    let switch1State:Bool = false
+    
     var datePickerDelegate: DatePickerDelegate? = nil
     var selectedTag: Int = 0
     
@@ -27,6 +29,8 @@ class SetAlarmVC: UIViewController {
         
         let backBarButton = UIBarButtonItem(title: "< Back", style: .plain, target: self, action: #selector(backButtonPressedToExitpage))
         navigationItem.leftBarButtonItem = backBarButton
+        
+        
     }
 
     @objc func saveButtonPressedToSaveAlarm() {
@@ -34,7 +38,6 @@ class SetAlarmVC: UIViewController {
         let dateFormat = DateFormatter()
         dateFormat.dateFormat = "HH:mm a"
         let dateString = dateFormat.string(from: selectedDate)
-        
         if datePickerDelegate != nil {
             self.datePickerDelegate?.didSelectDate(date: dateString, for: selectedTag)
         }

@@ -11,9 +11,6 @@ import UIKit
 
 class BluetoothVC: UIViewController, ValueToSend {
     
-    
-
-    
     var firstTime: String?
     var dynamicTag: Int?
     
@@ -36,17 +33,24 @@ class BluetoothVC: UIViewController, ValueToSend {
     
     let service3_characteristic1 = CBUUID(string: "00010203-0405-0607-0809-0A0B0C0D2B12") // read, writeWithoutResponse
     
+    static var responseForAlarmStatus: [String]? = []
+    
+    var time1ToShowinNextVC: String?
+    var time2ToShowinNextVC: String?
+    var time3ToShowinNextVC: String?
+    var time4ToShowinNextVC: String?
+    var time5ToShowinNextVC: String?
+    var time6ToShowinNextVC: String?
+    var time7ToShowinNextVC: String?
+    var time8ToShowinNextVC: String?
+    var time9ToShowinNextVC: String?
+    
+    var time1Switch: String?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        let barButton = UIBarButtonItem(title: "Back", style: .plain, target: self, action: #selector(backButtonPress))
-        navigationItem.leftBarButtonItem = barButton
-        
     }
-    @objc func backButtonPress() {
-        navigationController?.popViewController(animated: true)
-    }
+
 
     @IBAction func AddAlarmButtonPressed(_ sender: Any) {
         let storyBoard = UIStoryboard(name: "Main", bundle: nil)
@@ -54,11 +58,31 @@ class BluetoothVC: UIViewController, ValueToSend {
         vc.delegate = self
         vc.dateLable1Time = firstTime ?? "--:--"
         vc.dynamicAletTag = dynamicTag ?? 0
+        vc.time1ToShow = time1ToShowinNextVC ?? "--:--"
+        vc.time2ToShow = time2ToShowinNextVC ?? "--:--"
+        vc.time3ToShow = time3ToShowinNextVC ?? "--:--"
+        vc.time4ToShow = time4ToShowinNextVC ?? "--:--"
+        vc.time5ToShow = time5ToShowinNextVC ?? "--:--"
+        vc.time6ToShow = time6ToShowinNextVC ?? "--:--"
+        vc.time7ToShow = time7ToShowinNextVC ?? "--:--"
+        vc.time8ToShow = time8ToShowinNextVC ?? "--:--"
+        vc.time9ToShow = time9ToShowinNextVC ?? "--:--"
+//        if time1Switch == "01" {
+//            if let alarmSwitch = vc.alarmSwitch1 {
+//                alarmSwitch.isEnabled = true
+//                alarmSwitch.isOn = true
+//            }
+//        } else {
+//            if let alarmSwitch = vc.alarmSwitch1 {
+//                alarmSwitch.isEnabled = false
+//                alarmSwitch.isOn = false
+//            }
+//        }
         self.navigationController?.pushViewController(vc, animated: true)
     }
     
     @IBAction func pressButtonToConnect(_ sender: Any) {
-        centralManager = CBCentralManager(delegate: self, queue: nil)
+        centralManager = CBCentralManager(delegate: self, queue: nil)        
     }
 }
 extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
@@ -221,7 +245,7 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
             let minByte = UInt8(String(alarmMinTag,radix: 16), radix: 16)
 
 
-            let commandWithoutCRC: [UInt8] = [0xBB, 0x11, 0x0A, 0x4F, 0x08, 0x00, 0x06, hourByte!, 0x01, UInt8(firstPartHex,radix: 16)!, minByte!, 0x01, UInt8(SecondPartHex, radix: 16)!]
+            let commandWithoutCRC: [UInt8] = [0xBB, 0x11, 0x0A, 0xCE, 0x08, 0x00, 0x06, hourByte!, 0x01, UInt8(firstPartHex,radix: 16)!, minByte!, 0x01, UInt8(SecondPartHex, radix: 16)!]
             let checksum = Conversions.calculateChecksum(for: Conversions.getPairsFromHexString(data: commandWithoutCRC) ?? []) ?? ""
             if let byte = UInt8(checksum, radix: 16) {
                 let byteArrayChecksum: [UInt8] = [byte]
@@ -230,6 +254,10 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
                 peripheral.writeValue(data, for: characteristic, type: .withResponse)
             }
         }
+    }
+    func writealarmForState(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+           let command: [UInt8] = [0xbb, 0x11 ,0x55, 0xc8, 0x08, 0x00, 0x05, 0x61 ,0x01 ,0x00 ,0x71 , 0x01 , 0x00 , 0x81 , 0x01 , 0x00 , 0x62 , 0x01 , 0x00 , 0x72 , 0x01 , 0x00 , 0x82 , 0x01 , 0x00 , 0x63 , 0x01 , 0x00 , 0x73 , 0x01 , 0x00 , 0x83 , 0x01 , 0x00 , 0x64 , 0x01 , 0x00 , 0x74 , 0x01 , 0x00 , 0x84 , 0x01 , 0x00 , 0x65 , 0x01 , 0x00 , 0x75 , 0x01 , 0x00 , 0x85 , 0x01 , 0x00 , 0x66 , 0x01 , 0x00 , 0x76 , 0x01 , 0x00 , 0x86 , 0x01 , 0x00 , 0x67 , 0x01 , 0x00 , 0x77 , 0x01 , 0x00 , 0x87 , 0x01 , 0x00 , 0x68 , 0x01 , 0x00 , 0x78 , 0x01 , 0x00 , 0x88 , 0x01 , 0x00 , 0x69 , 0x01 , 0x00 , 0x79 , 0x01 , 0x00 , 0x89 , 0x01 , 0x00 , 0x68]
+           peripheral.writeValue(Data(command), for: write_characteristics, type: .withResponse)
     }
 //    func writealarmSwitch(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
 //        let command: [UInt8] = [0xBB, 0x11, 0x07, 0xCE, 0x08, 0x00, 0x06, 0x81, 0x01, 0x01, 0x32]
@@ -279,6 +307,9 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
                 self.writeConnectionCommand(peripheral: peripheral, characteristics: self.write_characteristics)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self.writeDateTime(peripheral: peripheral)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self.writealarmForState(peripheral: peripheral, characteristic: self.write_characteristics)
+                    }
                 }
             }
         }
@@ -314,7 +345,64 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
             } else if hexString?.count ?? 0 >= 6 && connectionPackage == "86" {
                 print("HexString response for alarm",hexString ?? [])
             } else if hexString?.count ?? 0 >= 6 && connectionPackage == "85" {
-                print("HexString response for alarm switch",hexString ?? [])
+                BluetoothVC.responseForAlarmStatus = hexString
+                print("response For Alarm status", BluetoothVC.responseForAlarmStatus)
+//                print("HexString response for alarm state",hexString ?? [])
+//                print(hexString![9] + hexString![12])
+//                let timePart1IntFormat = Int(hexString![9], radix: 16)
+//                let timePart2IntFormat = Int(hexString![12], radix: 16)
+////                print(timePart1IntFormat,timePart2IntFormat)
+//                let timeOneFirstPartstring = String(timePart1IntFormat ?? 0)
+//                let timeOneSecondPartString = String(timePart2IntFormat ?? 0)
+//                let timeOneString  = "\(timeOneFirstPartstring):\(timeOneSecondPartString)"
+//                time1ToShowinNextVC =  timeOneString
+//                print("Time To Show",time1ToShowinNextVC)
+//                print("final string", timeOneString)
+//                
+//                let time2FirstPartstring = String(Int(hexString![18], radix: 16) ?? 0)
+//                let time2SecondPartString = String(Int(hexString![21], radix: 16) ?? 0)
+//                let time2String  = "\(time2FirstPartstring):\(time2SecondPartString)"
+//                time2ToShowinNextVC = time2String
+//                
+//                let time3FirstPartstring = String(Int(hexString![27], radix: 16) ?? 0)
+//                let time3SecondPartString = String(Int(hexString![30], radix: 16) ?? 0)
+//                let time3String  = "\(time3FirstPartstring):\(time3SecondPartString)"
+//                time3ToShowinNextVC = time3String
+//                
+//                let time4FirstPartstring = String(Int(hexString![36], radix: 16) ?? 0)
+//                let time4SecondPartString = String(Int(hexString![39], radix: 16) ?? 0)
+//                let time4String  = "\(time4FirstPartstring):\(time4SecondPartString)"
+//                time4ToShowinNextVC = time4String
+//                
+//                let time5FirstPartstring = String(Int(hexString![45], radix: 16) ?? 0)
+//                let time5SecondPartString = String(Int(hexString![48], radix: 16) ?? 0)
+//                let time5String  = "\(time5FirstPartstring):\(time5SecondPartString)"
+//                time5ToShowinNextVC = time5String
+//                
+//                let time6FirstPartstring = String(Int(hexString![54], radix: 16) ?? 0)
+//                let time6SecondPartString = String(Int(hexString![57], radix: 16) ?? 0)
+//                let time6String  = "\(time6FirstPartstring):\(time6SecondPartString)"
+//                time6ToShowinNextVC = time6String
+//                
+//                let time7FirstPartstring = String(Int(hexString![63], radix: 16) ?? 0)
+//                let time7SecondPartString = String(Int(hexString![66], radix: 16) ?? 0)
+//                let time7String  = "\(time7FirstPartstring):\(time7SecondPartString)"
+//                time7ToShowinNextVC = time7String
+//                
+//                let time8FirstPartstring = String(Int(hexString![72], radix: 16) ?? 0)
+//                let time8SecondPartString = String(Int(hexString![75], radix: 16) ?? 0)
+//                let time8String  = "\(time8FirstPartstring):\(time8SecondPartString)"
+//                time8ToShowinNextVC = time8String
+//                
+//                let time9FirstPartstring = String(Int(hexString![81], radix: 16) ?? 0)
+//                let time9SecondPartString = String(Int(hexString![84], radix: 16) ?? 0)
+//                let time9String  = "\(time9FirstPartstring):\(time9SecondPartString)"
+//                time9ToShowinNextVC = time9String
+//                
+//                let time1SwitchHex = hexString![15]
+//                let time1SwitchString = String(time1SwitchHex)
+//                print("Time1SwitchString:", time1SwitchString)
+//                time1Switch = time1SwitchString
             }
             else {
                 print("other hexastring",hexString ?? [])
@@ -338,7 +426,9 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
 extension BluetoothVC {
 
     func value(time: String, alarmNumber: Int) {
-        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.writealarmForState(peripheral: self.myPeripheral, characteristic: self.write_characteristics)
+        }
         dynamicTag = alarmNumber
         print(alarmNumber)
         print(time)
@@ -371,25 +461,11 @@ extension BluetoothVC {
             firstTime = time
         }
         writeAlarmCommand(peripheral: myPeripheral, characteristic: write_characteristics, time: time, alaramTag: alarmNumber)
-//        writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: alarmNumber)
-//        writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics)
+
     }
     
     func alarmSwitchDidChange(isEnabled: Bool,tag: Int) {
-//        if tag == 1 {
-//            if isEnabled {
-//                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
-//            } else {
-//                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
-//            }
-//        }
-//        else if tag == 2 {
-//            if isEnabled {
-//                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
-//            } else {
-//                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
-//            }
-//        }
+
         switch tag {
         case 1:
             if isEnabled {
@@ -398,6 +474,48 @@ extension BluetoothVC {
                 writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
             }
         case 2:
+            if isEnabled {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+            } else {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+            }
+        case 3:
+            if isEnabled {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+            } else {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+            }
+        case 4:
+            if isEnabled {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+            } else {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+            }
+        case 5:
+            if isEnabled {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+            } else {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+            }
+        case 6:
+            if isEnabled {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+            } else {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+            }
+        case 7:
+            if isEnabled {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+            } else {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+            }
+        case 8:
+            if isEnabled {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
+            } else {
+                writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: false)
+            }
+        case 9:
             if isEnabled {
                 writealarmSwitch(peripheral: myPeripheral, characteristic: write_characteristics, switchTag: tag, isSwitchOn: true)
             } else {
