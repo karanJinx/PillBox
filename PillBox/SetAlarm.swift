@@ -16,7 +16,7 @@ class SetAlarmVC: UIViewController {
     @IBOutlet var datePicker: UIDatePicker!
     @IBOutlet var remarksTextField: UITextField!
     
-//    let switch1State:Bool = false
+    //    let switch1State:Bool = false
     
     var datePickerDelegate: DatePickerDelegate? = nil
     var selectedTag: Int = 0
@@ -32,7 +32,7 @@ class SetAlarmVC: UIViewController {
         
         
     }
-
+    
     @objc func saveButtonPressedToSaveAlarm() {
         guard let selectedDate = datePicker?.date else {return}
         let dateFormat = DateFormatter()

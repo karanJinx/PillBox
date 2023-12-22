@@ -48,7 +48,7 @@ struct Conversions {
         if data.isEmpty {
             return nil
         }
-        
+
         var hexString = ""
         for byte in data {
             let hex = String(format: "%02X", byte)
@@ -57,7 +57,7 @@ struct Conversions {
                 hexString += " "
             }
         }
-        
+
         return hexString.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
@@ -112,11 +112,11 @@ struct Conversions {
     ]
     static func calculateCRC16(data: [UInt8]) -> UInt16 {
         var crc: UInt16 = 0xFFFF
-        
+
         for byte in data {
             crc = (crc >> 8) ^ UInt16(lookupTable[Int((crc ^ UInt16(byte)) & 0xFF)])
         }
-        
+
         return crc
     }
     
@@ -177,8 +177,8 @@ struct Conversions {
         pairs.append(resultString)
         
         //stringArray to byteArray
-        
+       
         return pairs
     }
-    
+
 }
