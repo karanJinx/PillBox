@@ -8,8 +8,14 @@
 import CoreBluetooth
 import UIKit
 
+enum muteState {
+    case mute
+    case umMute
+}
 
 class BluetoothVC: UIViewController, ValueToSend {
+    @IBOutlet var muteButton: UIButton!
+    var currentState: muteState = .umMute
     
     var firstTime: String?
     var dynamicTag: Int?
@@ -30,7 +36,7 @@ class BluetoothVC: UIViewController, ValueToSend {
     
     let service2_characteristic1 = CBUUID(string: "2F2DFFF4-2E85-649D-3545-3586428F5DA3") // notify
     let service2_characteristic2 = CBUUID(string: "2F2DFFF5-2E85-649D-3545-3586428F5DA3") // write, writeWithoutResponse
-    
+
     let service3_characteristic1 = CBUUID(string: "00010203-0405-0607-0809-0A0B0C0D2B12") // read, writeWithoutResponse
     
     static var responseForAlarmStatus: [String]? = []
@@ -47,6 +53,8 @@ class BluetoothVC: UIViewController, ValueToSend {
     
     var time1Switch: String?
     
+    var responseForReset: [String]? = []
+    
     override func viewDidLoad() {
         super.viewDidLoad()
     }
@@ -56,9 +64,11 @@ class BluetoothVC: UIViewController, ValueToSend {
         let storyBoard = UIStoryboard(name: "Main", bundle: nil)
         let vc = storyBoard.instantiateViewController(identifier: "AlarmVC") as! AlarmVC
         vc.delegate = self
-        vc.alarmState = BluetoothVC.responseForAlarmStatus!
-        vc.dynamicAletTag = dynamicTag ?? 0
         
+        vc.alarmState = BluetoothVC.responseForAlarmStatus ?? []
+        vc.dynamicAletTag = dynamicTag ?? 0
+        vc.Peripheral = myPeripheral
+        vc.writeCharacteristic = write_characteristics
         
         self.navigationController?.pushViewController(vc, animated: true)
     }
@@ -66,6 +76,26 @@ class BluetoothVC: UIViewController, ValueToSend {
     @IBAction func pressButtonToConnect(_ sender: Any) {
         centralManager = CBCentralManager(delegate: self, queue: nil)        
     }
+    @IBAction func earlyDoseButtonPressed(_ sender: Any) {
+        print("pressed")
+        guard let peripheral = myPeripheral else { return }
+        writeEarlyDoseCommand(peripheral: peripheral, characteristic: write_characteristics)
+    }
+    @IBAction func muteButtonPressed(_ sender: Any) {
+        currentState = (currentState == .mute) ? .umMute : .mute
+        switch currentState {
+            
+        case .mute:
+            writeCommandForMute(peripheral: myPeripheral, characteristic: write_characteristics)
+        case .umMute:
+            writeCommandForUnmute(peripheral: myPeripheral, characteristic: write_characteristics)
+        }
+        let buttonTitle = (currentState == .mute) ? "Unmute" : "Mute"
+        muteButton.setTitle(buttonTitle, for: .normal)
+//        writeCommandForMute(peripheral: myPeripheral, characteristic: write_characteristics)
+    }
+    
+    
 }
 extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -241,6 +271,91 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
         let command: [UInt8] = [0xbb, 0x11 ,0x55, 0xc8, 0x08, 0x00, 0x05, 0x61 ,0x01 ,0x00 ,0x71 , 0x01 , 0x00 , 0x81 , 0x01 , 0x00 , 0x62 , 0x01 , 0x00 , 0x72 , 0x01 , 0x00 , 0x82 , 0x01 , 0x00 , 0x63 , 0x01 , 0x00 , 0x73 , 0x01 , 0x00 , 0x83 , 0x01 , 0x00 , 0x64 , 0x01 , 0x00 , 0x74 , 0x01 , 0x00 , 0x84 , 0x01 , 0x00 , 0x65 , 0x01 , 0x00 , 0x75 , 0x01 , 0x00 , 0x85 , 0x01 , 0x00 , 0x66 , 0x01 , 0x00 , 0x76 , 0x01 , 0x00 , 0x86 , 0x01 , 0x00 , 0x67 , 0x01 , 0x00 , 0x77 , 0x01 , 0x00 , 0x87 , 0x01 , 0x00 , 0x68 , 0x01 , 0x00 , 0x78 , 0x01 , 0x00 , 0x88 , 0x01 , 0x00 , 0x69 , 0x01 , 0x00 , 0x79 , 0x01 , 0x00 , 0x89 , 0x01 , 0x00 , 0x68]
         peripheral.writeValue(Data(command), for: write_characteristics, type: .withResponse)
     }
+    func writeEarlyDoseCommand(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+        let randomNumber32 = arc4random_uniform(100)
+        print("random number", randomNumber32)
+        let randomnumber16: UInt8 = UInt8(randomNumber32 & 0xFF)
+        print("random16", randomnumber16)
+        let randomNumberString = "0x" + (String(randomnumber16))
+        print("randomstr ", randomNumberString)
+
+        let commandWithoutCRC: [UInt8] = [0xbb, 0x11, 0x07,UInt8(randomnumber16), 0x08, 0x00, 0x08, 0xe4, 0x01, 0x00]
+            print(commandWithoutCRC)
+            let stringArrayFromByteArray = Conversions.getPairsFromHexString(data: commandWithoutCRC) ?? []
+            let finalCRC = Conversions.calculateChecksum(for: stringArrayFromByteArray) ?? ""
+            if let byte = UInt8(finalCRC, radix: 16) {
+                let byteArray = [byte]
+                let command: [UInt8] = commandWithoutCRC + byteArray
+                peripheral.writeValue(Data(command), for: write_characteristics, type: .withResponse)
+            }
+
+    }
+    func writeCommandForMute(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+        let commandWithoutCRC: [UInt8] = [0xbb, 0x11, 0x07, 0xc8, 0x08, 0x00, 0x08, 0xe2, 0x01, 0x01]
+        let commandStringArray = Conversions.getPairsFromHexString(data: commandWithoutCRC) ?? []
+        let crc = Conversions.calculateChecksum(for: commandStringArray) ?? ""
+        if let byte = UInt8(crc, radix: 16) {
+            let byteArray = [byte]
+            let command: [UInt8] = commandWithoutCRC + byteArray
+            peripheral.writeValue(Data(command), for: characteristic, type: .withResponse)
+        }
+    }
+    func writeCommandForUnmute(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+        let commandWithoutCRC: [UInt8] = [0xbb, 0x11, 0x07, 0xc8, 0x08, 0x00, 0x08, 0xe2, 0x01, 0x00]
+        let commandStringArray = Conversions.getPairsFromHexString(data: commandWithoutCRC) ?? []
+        let crc = Conversions.calculateChecksum(for: commandStringArray) ?? ""
+        if let byte = UInt8(crc, radix: 16) {
+            let byteArray = [byte]
+            let command: [UInt8] = commandWithoutCRC + byteArray
+            peripheral.writeValue(Data(command), for: characteristic, type: .withResponse)
+        }
+    }
+    func writeCommandForReset(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+//        let randomNumber = arc4random_uniform(256)
+//        print("Random num uint32,", randomNumber)
+//        var randomNum = UInt8(randomNumber & 0xFF)
+//        print("Random num uint8,", randomNum)
+//        var randomnumHex = String(randomNum, radix: 16)
+//        print("Random num hex,", randomnumHex)
+//        randomnumHex = "0x" + randomnumHex
+//        print(randomnumHex)
+//        let command: [UInt8] = [0xbb, 0x11 ,0x55, UInt8(randomnumHex), 0x08, 0x00, 0x06, 0x61 ,0x01 ,0xff ,0x71 , 0x01 , 0xff , 0x81 , 0x01 , 0x00 , 0x62 , 0xff , 0x00 , 0x72 , 0xff , 0x00 , 0x82 , 0x01 , 0x00 , 0x63 , 0x01 , 0xff , 0x73 , 0x01 , 0xff , 0x83 , 0x01 , 0x00 , 0x64 , 0x01 , 0xff , 0x74 , 0x01 , 0xff , 0x84 , 0x01 , 0x00 , 0x65 , 0x01 , 0xff , 0x75 , 0x01 , 0xff , 0x85 , 0x01 , 0x00 , 0x66 , 0x01 , 0xff , 0x76 , 0x01 , 0xff , 0x86 , 0x01 , 0x00 , 0x67 , 0x01 , 0xff , 0x77 , 0x01 , 0xff , 0x87 , 0x01 , 0x00 , 0x68 , 0x01 , 0xff , 0x78 , 0x01 , 0xff , 0x88 , 0x01 , 0x00 , 0x69 , 0x01 , 0xff , 0x79 , 0x01 , 0xff , 0x89 , 0x01 , 0x00 , 0x85]
+//        peripheral.writeValue(Data(command), for: characteristic, type: .withResponse)
+        
+        let randomNumber = arc4random_uniform(256)
+        print("Random num uint32,", randomNumber)
+        let randomNum = UInt8(randomNumber & 0xFF)
+        print("Random num uint8,", randomNum)
+
+        let randomNumHex =  String(randomNum, radix: 16)
+        print("Random num hex,", randomNumHex)
+
+        var byte: [UInt8] = []
+        
+        if let bytes = UInt8(randomNumHex, radix: 16) {
+            byte.append(bytes)
+        }
+
+        let commandWithOutCRC: [UInt8] = [0xbb, 0x11, 0x55] + byte +
+                [0x08, 0x00, 0x06, 0x61, 0x01, 0xff, 0x71, 0x01, 0xff, 0x81, 0x01, 0x00, 0x62,
+                0x01, 0xff, 0x72, 0x01, 0xff, 0x82, 0x01, 0x00, 0x63, 0x01, 0xff, 0x73, 0x01,
+                0xff, 0x83, 0x01, 0x00, 0x64, 0x01, 0xff, 0x74, 0x01, 0xff, 0x84, 0x01, 0x00,
+                0x65, 0x01, 0xff, 0x75, 0x01, 0xff, 0x85, 0x01, 0x00, 0x66, 0x01, 0xff, 0x76,
+                0x01, 0xff, 0x86, 0x01, 0x00, 0x67, 0x01, 0xff, 0x77, 0x01, 0xff, 0x87, 0x01,
+                0x00, 0x68, 0x01, 0xff, 0x78, 0x01, 0xff, 0x88, 0x01, 0x00, 0x69, 0x01, 0xff,
+                0x79, 0x01, 0xff, 0x89, 0x01, 0x00]
+        let stringArray = Conversions.getPairsFromHexString(data: commandWithOutCRC) ?? []
+        let crc = Conversions.calculateChecksum(for: stringArray) ?? ""
+        if let byte = UInt8(crc, radix: 16) {
+            let byteArray = [byte]
+            let commandWithCRC = commandWithOutCRC + byteArray
+            peripheral.writeValue(Data(commandWithCRC), for: characteristic, type: .withResponse)
+
+        }
+    
+        
+
+    }
     //    func writealarmSwitch(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
     //        let command: [UInt8] = [0xBB, 0x11, 0x07, 0xCE, 0x08, 0x00, 0x06, 0x81, 0x01, 0x01, 0x32]
     //        peripheral.writeValue(Data(command), for: write_characteristics, type: .withResponse)
@@ -323,66 +438,12 @@ extension BluetoothVC: CBCentralManagerDelegate, CBPeripheralDelegate {
             } else if hexString?.count ?? 0 >= 6 && connectionPackage == "88" {
                 print("HexString response 88 in 6th index",hexString ?? [])
             } else if hexString?.count ?? 0 >= 6 && connectionPackage == "86" {
+                responseForReset = hexString
                 print("HexString response for alarm",hexString ?? [])
             } else if hexString?.count ?? 0 >= 6 && connectionPackage == "85" {
                 BluetoothVC.responseForAlarmStatus = hexString
-                print("response For Alarm status 85", BluetoothVC.responseForAlarmStatus)
-                //                print("HexString response for alarm state",hexString ?? [])
-                //                print(hexString![9] + hexString![12])
-                //                let timePart1IntFormat = Int(hexString![9], radix: 16)
-                //                let timePart2IntFormat = Int(hexString![12], radix: 16)
-                ////                print(timePart1IntFormat,timePart2IntFormat)
-                //                let timeOneFirstPartstring = String(timePart1IntFormat ?? 0)
-                //                let timeOneSecondPartString = String(timePart2IntFormat ?? 0)
-                //                let timeOneString  = "\(timeOneFirstPartstring):\(timeOneSecondPartString)"
-                //                time1ToShowinNextVC =  timeOneString
-                //                print("Time To Show",time1ToShowinNextVC)
-                //                print("final string", timeOneString)
-                //                
-                //                let time2FirstPartstring = String(Int(hexString![18], radix: 16) ?? 0)
-                //                let time2SecondPartString = String(Int(hexString![21], radix: 16) ?? 0)
-                //                let time2String  = "\(time2FirstPartstring):\(time2SecondPartString)"
-                //                time2ToShowinNextVC = time2String
-                //                
-                //                let time3FirstPartstring = String(Int(hexString![27], radix: 16) ?? 0)
-                //                let time3SecondPartString = String(Int(hexString![30], radix: 16) ?? 0)
-                //                let time3String  = "\(time3FirstPartstring):\(time3SecondPartString)"
-                //                time3ToShowinNextVC = time3String
-                //                
-                //                let time4FirstPartstring = String(Int(hexString![36], radix: 16) ?? 0)
-                //                let time4SecondPartString = String(Int(hexString![39], radix: 16) ?? 0)
-                //                let time4String  = "\(time4FirstPartstring):\(time4SecondPartString)"
-                //                time4ToShowinNextVC = time4String
-                //                
-                //                let time5FirstPartstring = String(Int(hexString![45], radix: 16) ?? 0)
-                //                let time5SecondPartString = String(Int(hexString![48], radix: 16) ?? 0)
-                //                let time5String  = "\(time5FirstPartstring):\(time5SecondPartString)"
-                //                time5ToShowinNextVC = time5String
-                //                
-                //                let time6FirstPartstring = String(Int(hexString![54], radix: 16) ?? 0)
-                //                let time6SecondPartString = String(Int(hexString![57], radix: 16) ?? 0)
-                //                let time6String  = "\(time6FirstPartstring):\(time6SecondPartString)"
-                //                time6ToShowinNextVC = time6String
-                //                
-                //                let time7FirstPartstring = String(Int(hexString![63], radix: 16) ?? 0)
-                //                let time7SecondPartString = String(Int(hexString![66], radix: 16) ?? 0)
-                //                let time7String  = "\(time7FirstPartstring):\(time7SecondPartString)"
-                //                time7ToShowinNextVC = time7String
-                //                
-                //                let time8FirstPartstring = String(Int(hexString![72], radix: 16) ?? 0)
-                //                let time8SecondPartString = String(Int(hexString![75], radix: 16) ?? 0)
-                //                let time8String  = "\(time8FirstPartstring):\(time8SecondPartString)"
-                //                time8ToShowinNextVC = time8String
-                //                
-                //                let time9FirstPartstring = String(Int(hexString![81], radix: 16) ?? 0)
-                //                let time9SecondPartString = String(Int(hexString![84], radix: 16) ?? 0)
-                //                let time9String  = "\(time9FirstPartstring):\(time9SecondPartString)"
-                //                time9ToShowinNextVC = time9String
-                //                
-                //                let time1SwitchHex = hexString![15]
-                //                let time1SwitchString = String(time1SwitchHex)
-                //                print("Time1SwitchString:", time1SwitchString)
-                //                time1Switch = time1SwitchString
+               
+                print("response For Alarm status 85", BluetoothVC.responseForAlarmStatus ?? [])
             }
             else {
                 print("other hexastring",hexString ?? [])
@@ -414,36 +475,6 @@ extension BluetoothVC {
         dynamicTag = alarmNumber
         print(alarmNumber)
         print(time)
-        //        if dynamicTag == 1 {
-        //            firstTime = time
-        ////            print("FirstTime",firstTime)
-        //        }
-        //        if dynamicTag == 2 {
-        //            firstTime = time
-        //        }
-        //        if dynamicTag == 3 {
-        //            firstTime = time
-        //        }
-        //        if dynamicTag == 4 {
-        //            firstTime = time
-        //        }
-        //        if dynamicTag == 5 {
-        //            firstTime = time
-        //        }
-        //        if dynamicTag == 6 {
-        //            firstTime = time
-        //        }
-        //        if dynamicTag == 7 {
-        //            firstTime = time
-        //        }
-        //        if dynamicTag == 8 {
-        //            firstTime = time
-        //        }
-        //        if dynamicTag == 9 {
-        //            firstTime = time
-        //        }
-        
-        
     }
     
     func alarmSwitchDidChange(isEnabled: Bool,tag: Int) {
@@ -508,6 +539,10 @@ extension BluetoothVC {
             fatalError("Unknown switch")
         }
         
+    }
+    
+    func resetButton() {
+        writeCommandForReset(peripheral: myPeripheral, characteristic: write_characteristics)
     }
     
     
